@@ -1,0 +1,33 @@
+name: Compilar Lector NFC
+
+on:
+  push:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: gradle/actions/setup-gradle@v5
+        with:
+          gradle-version: "8.9"
+      - run: gradle assembleRelease
+      - run: cp app/build/outputs/apk/release/app-release.apk LectorNFC.apk
+      - uses: actions/upload-artifact@v5
+        with:
+          name: LectorNFC-apk
+          path: LectorNFC.apk
+      - name: Publicar APK en Releases
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete latest --yes --cleanup-tag || true
+          gh release create latest LectorNFC.apk --title "Lector NFC (ultima version)" --notes "APK compilado automaticamente desde ${GITHUB_SHA::7}."
